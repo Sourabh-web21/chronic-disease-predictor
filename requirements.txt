@@ -1,0 +1,7 @@
+Flask>=2.3.3
+pandas>=2.1
+numpy>=1.25
+matplotlib>=3.8
+joblib>=1.3
+shap>=1.1
+xgboost>=1.7

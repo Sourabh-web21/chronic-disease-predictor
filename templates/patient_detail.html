@@ -1,0 +1,332 @@
+{% extends "layout.html" %}
+{% block title %}Patient {{ patient_id }} - Details{% endblock %}
+{% block page_title %}Patient Analysis: {{ patient_id }}{% endblock %}
+
+{% block content %}
+<!-- Patient Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card fade-in" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border: none;">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="text-white mb-2">
+                            <i class="fas fa-user-circle me-3"></i>
+                            Patient ID: {{ patient_id }}
+                        </h2>
+                        <div class="row text-white">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-database me-2"></i>
+                                    <span>{{ patient_summary.total_records }} Records</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <span>{{ patient_summary.data_quality | round(1) }}% Data Quality</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-clock me-2"></i>
+                                    <span>Updated {{ patient_summary.last_update }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-light">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overall Risk Assessment -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card fade-in" style="animation-delay: 0.1s;">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    AI Risk Assessment
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for target, pred in predictions.items() %}
+                    <div class="col-md-4 mb-3">
+                        <div class="text-center p-3" style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid var(--border-color);">
+                            <h6 class="gradient-text">{{ target.replace('_Y', ' Disease') }}</h6>
+                            <div class="stat-number" style="font-size: 2rem; color: 
+                                {% if pred.risk_level == 'High' %}var(--danger-color)
+                                {% elif pred.risk_level == 'Medium' %}var(--warning-color)  
+                                {% else %}var(--success-color){% endif %};">
+                                {{ (pred.probability * 100) | round(1) }}%
+                            </div>
+                            <span class="risk-indicator risk-{{ pred.risk_level.lower() }}">
+                                {{ pred.risk_level }} Risk
+                            </span>
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar 
+                                    {% if pred.risk_level == 'High' %}bg-danger
+                                    {% elif pred.risk_level == 'Medium' %}bg-warning
+                                    {% else %}bg-success{% endif %}"
+                                    style="width: {{ (pred.probability * 100) }}%"></div>
+                            </div>
+                           
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card fade-in" style="animation-delay: 0.2s;">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Overall Risk Score
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <img src="data:image/png;base64,{{ risk_gauge }}" class="img-fluid" style="max-height: 200px;">
+                </div>
+                <div class="stat-number" style="color: 
+                    {% if overall_risk > 0.66 %}var(--danger-color)
+                    {% elif overall_risk > 0.33 %}var(--warning-color)
+                    {% else %}var(--success-color){% endif %};">
+                    {{ (overall_risk * 100) | round(1) }}%
+                </div>
+                <p class="text-white" >Composite Risk Assessment</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SHAP Feature Importance -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card fade-in" style="animation-delay: 0.3s;">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-brain me-2"></i>
+                    AI Explanation - Key Risk Factors
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for target, features in shap_info.items() %}
+                    <div class="col-lg-4 mb-4">
+                        <h6 class="gradient-text">{{ target.replace('_Y', ' Disease') }}</h6>
+                        {% for feature_data in features %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2" 
+                             style="background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+                            <span class="small">{{ feature_data.feature.replace('_', ' ').title() }}</span>
+                            <div class="d-flex align-items-center">
+                                <div class="progress me-2" style="width: 60px; height: 4px;">
+                                    <div class="progress-bar bg-info" 
+                                         style="width: {{ (feature_data.importance / features[0].importance * 100) if features else 0 }}%"></div>
+                                </div>
+                                <!-- <small class="text-muted">{{ feature_data.importance | round(3) }}</small> -->
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Medical Trend Analysis -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card fade-in" style="animation-delay: 0.4s;">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Medical Parameter Trends
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for col, img in plots.items() %}
+                        {% if loop.index > 9 %}
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                                <div class="text-center p-3" style="background: rgba(255, 255, 255, 0.02); border-radius: 12px; border: 1px solid var(--border-color);">
+                                    <h6 class="text-light mb-3">{{ col.replace('_', ' ').title() }}</h6>
+                                    <img src="data:image/png;base64,{{ img }}" class="img-fluid" style="border-radius: 8px;">
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="enlargeChart('{{ col }}', '{{ img }}')">
+                                            <i class="fas fa-expand me-1"></i>
+                                            Expand
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Recent Data Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card fade-in" style="animation-delay: 0.5s;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>
+                    Latest Medical Records
+                </h5>
+                <span class="badge bg-info">Last 10 Entries</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                {% for col in df[0].keys() %}
+                                    <th>{{ col.replace('_', ' ').title() }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in df %}
+                            <tr>
+                                {% for key, val in row.items() %}
+                                    <td>
+                                        {% if val is number %}
+                                            <span class="font-monospace">{{ val | round(2) }}</span>
+                                        {% else %}
+                                            {{ val }}
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Modal -->
+<div class="modal fade" id="chartModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                <h5 class="modal-title text-light" id="chartModalTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="chartModalImage" class="img-fluid" style="border-radius: 8px;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Panel -->
+<!-- <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    <div class="card" style="width: 280px; background: var(--card-bg); border: 1px solid var(--border-color);">
+        <div class="card-body">
+            <h6 class="card-title">
+                <i class="fas fa-tools me-2 text-info"></i>
+                Patient Actions
+            </h6>
+            <div class="d-grid gap-2">
+                <button class="btn btn-sm btn-outline-success" onclick="generateReport()">
+                    <i class="fas fa-file-medical me-1"></i>
+                    Generate Report
+                </button>
+                <button class="btn btn-sm btn-outline-warning" onclick="scheduleFollowup()">
+                    <i class="fas fa-calendar-plus me-1"></i>
+                    Schedule Follow-up
+                </button>
+                <button class="btn btn-sm btn-outline-info" onclick="refreshAnalysis()">
+                    <i class="fas fa-sync me-1"></i>
+                    Refresh Analysis
+                </button>
+            </div>
+        </div>
+    </div> -->
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Enlarge chart function
+    function enlargeChart(title, imageData) {
+        document.getElementById('chartModalTitle').textContent = title.replace('_', ' ').split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        document.getElementById('chartModalImage').src = 'data:image/png;base64,' + imageData;
+        new bootstrap.Modal(document.getElementById('chartModal')).show();
+    }
+
+    // Generate report function
+    function generateReport() {
+        // Simulate report generation
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="loading-spinner me-1"></span>Generating...';
+        btn.disabled = true;
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            alert('Patient report generated successfully!');
+        }, 2000);
+    }
+
+    // Schedule follow-up function
+    function scheduleFollowup() {
+        alert('Follow-up scheduling feature will be implemented soon!');
+    }
+
+    // Refresh analysis function
+    function refreshAnalysis() {
+        location.reload();
+    }
+
+    // Add hover effects to risk cards
+    document.querySelectorAll('[style*="background: rgba(255, 255, 255, 0.03)"]').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-3px)';
+            this.style.transition = 'all 0.3s ease';
+            this.style.background = 'rgba(255, 255, 255, 0.08)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.background = 'rgba(255, 255, 255, 0.03)';
+        });
+    });
+
+    // Auto-update patient trends every 30 seconds
+    setInterval(() => {
+        fetch(`/api/patient-trends/{{ patient_id }}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Updated trend data:', data);
+                // Update charts if needed
+            })
+            .catch(error => console.log('Auto-update failed:', error));
+    }, 30000);
+</script>
+{% endblock %}

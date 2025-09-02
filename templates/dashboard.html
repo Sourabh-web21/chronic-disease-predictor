@@ -1,0 +1,350 @@
+{% extends "layout.html" %}
+{% block title %}Patient Dashboard{% endblock %}
+{% block page_title %}Patient Dashboard{% endblock %}
+
+{% block content %}
+<!-- Dashboard Stats Overview -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stat-card fade-in">
+            <div class="stat-number">{{ stats.total }}</div>
+            <div class="stat-label">
+                <i class="fas fa-users me-1"></i>
+                Total Patients
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stat-card fade-in" style="animation-delay: 0.1s;">
+            <div class="stat-number">{{ stats.high_risk }}</div>
+            <div class="stat-label">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                High Risk
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stat-card fade-in" style="animation-delay: 0.2s;">
+            <div class="stat-number">{{ stats.medium_risk }}</div>
+            <div class="stat-label">
+                <i class="fas fa-minus-circle me-1"></i>
+                Medium Risk
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stat-card fade-in" style="animation-delay: 0.3s;">
+            <div class="stat-number">{{ stats.low_risk }}</div>
+            <div class="stat-label">
+                <i class="fas fa-check-circle me-1"></i>
+                Low Risk
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Distribution Chart -->
+<div class="row mb-4">
+    <div class="col-lg-8 mb-4">
+        <div class="card fade-in" style="animation-delay: 0.4s;">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Risk Distribution Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="riskChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100 fade-in" style="animation-delay: 0.5s;">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-brain me-2"></i>
+                    AI Models Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Heart Disease Model</span>
+                    <span class="badge bg-success">Active</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Diabetes Model</span>
+                    <span class="badge bg-success">Active</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Kidney Disease Model</span>
+                    <span class="badge bg-success">Active</span>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <div class="stat-number" style="font-size: 2rem;">{{ stats.models_loaded }}/3</div>
+                    <div class="stat-label">Models Loaded</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patient Management Section -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card fade-in" style="animation-delay: 0.6s;">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-search me-2"></i>
+                    Patient Search & Access
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">Quickly search and access detailed patient information and risk assessments.</p>
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Select Patient</label>
+                        <select class="form-select" name="patient_id" required>
+                            <option value="">-- Choose Patient ID --</option>
+                            {% for p in patients %}
+                                <option value="{{ p.id }}">
+                                    Patient {{ p.id }} 
+                                    <!-- <span class="risk-indicator risk-{{ p.risk_level.lower() }}">{{ p.risk_level }}</span> -->
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-user-md me-2"></i>
+                        View Patient Details
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card fade-in" style="animation-delay: 0.7s;">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-upload me-2"></i>
+                    Upload New Patient Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">Import new patient data for immediate AI analysis and risk assessment.</p>
+                
+                <form action="{{ url_for('upload_csv') }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">CSV File</label>
+                        <input type="file" name="csv_file" accept=".csv" class="form-control" required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            CSV must contain Patient_ID and medical parameters
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>
+                        Upload & Analyze
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patient List Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card fade-in" style="animation-delay: 0.8s;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Patient Registry
+                </h5>
+                <span class="badge bg-primary">{{ patients|length }} Patients</span>
+            </div>
+            <div class="card-body p-0">
+                {% if patients %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Overall Risk</th>
+                                <th>Risk Level</th>
+                                <th>Age</th>
+                                <th>Last Visit</th>
+                                <th>Conditions</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in patients %}
+                            <tr class="{% if p.alert %}table-danger{% endif %}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if p.alert %}
+                                            <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                                        {% endif %}
+                                        <strong>{{ p.id }}</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress me-2" style="width: 100px; height: 8px;">
+                                            <div class="progress-bar 
+                                                {% if p.risk_score > 0.66 %}bg-danger
+                                                {% elif p.risk_score > 0.33 %}bg-warning
+                                                {% else %}bg-success{% endif %}"
+                                                style="width: {{ (p.risk_score * 100) }}%"></div>
+                                        </div>
+                                        <span class="small">{{ (p.risk_score * 100) | round(1) }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="risk-indicator risk-{{ p.risk_level.lower() }}">
+                                        {{ p.risk_level }}
+                                    </span>
+                                </td>
+                                <td>{{ p.age }} years</td>
+                                <td>
+                                    <small class="text-muted">{{ p.last_visit }}</small>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for condition, risk in p.conditions.items() %}
+                                            <span class="badge 
+                                                {% if risk > 0.66 %}bg-danger
+                                                {% elif risk > 0.33 %}bg-warning
+                                                {% else %}bg-success{% endif %}"
+                                                style="font-size: 0.7rem;">
+                                                {{ condition }}
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('patient_detail', patient_id=p.id) }}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye me-1"></i>
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users-slash fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Patients Found</h5>
+                    <p class="text-muted">Upload a CSV file to start analyzing patient data.</p>
+                    <button class="btn btn-primary" onclick="document.querySelector('input[type=file]').click()">
+                        <i class="fas fa-upload me-2"></i>
+                        Upload First Patient
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Floating Panel -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    <div class="card" style="width: 300px; background: var(--card-bg); border: 1px solid var(--border-color);">
+        <div class="card-body">
+            <h6 class="card-title">
+                <i class="fas fa-bolt me-2 text-warning"></i>
+                Quick Actions
+            </h6>
+            <div class="d-grid gap-2">
+                <button class="btn btn-sm btn-outline-primary" onclick="refreshDashboard()">
+                    <i class="fas fa-sync me-1"></i>
+                    Refresh Data
+                </button>
+                <button class="btn btn-sm btn-outline-success" onclick="document.querySelector('input[type=file]').click()">
+                    <i class="fas fa-plus me-1"></i>
+                    Add Patient
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Risk Distribution Chart
+    const ctx = document.getElementById('riskChart').getContext('2d');
+    const riskChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            datasets: [{
+                data: [{{ risk_distribution.Low }}, {{ risk_distribution.Medium }}, {{ risk_distribution.High }}],
+                backgroundColor: [
+                    '#00ff9f',
+                    '#ffd93d', 
+                    '#ff6b6b'
+                ],
+                borderColor: [
+                    '#00d4aa',
+                    '#ffc107',
+                    '#dc3545'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#e2e8f0',
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                }
+            }
+        }
+    });
+
+    // Refresh Dashboard Function
+    function refreshDashboard() {
+        location.reload();
+    }
+
+    // Auto-refresh every 5 minutes
+    setInterval(refreshDashboard, 300000);
+
+    // Enhanced table interactions
+    document.querySelectorAll('tr[class*="table-"]').forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.01)';
+            this.style.transition = 'transform 0.2s ease';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+
+    // Loading animation for form submissions
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<span class="loading-spinner me-2"></span>Processing...';
+                submitBtn.disabled = true;
+            }
+        });
+    });
+</script>
+{% endblock %}
