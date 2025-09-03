@@ -238,7 +238,10 @@ def patient_detail(patient_id):
     patient_summary = {
         "total_records": len(df),
         "data_quality": 100,  # Placeholder, compute real if needed
-        "last_update": df['Day'].iloc[-1] if 'Day' in df.columns else "N/A"
+        "last_update": df['Day'].iloc[-1] if 'Day' in df.columns else "N/A",
+         "age": int(df['Age'].iloc[-1]) if 'Age' in df.columns else "N/A",
+    "gender": df['Gender'].iloc[-1] if 'Gender' in df.columns else "N/A",
+    "name": df['Name'].iloc[-1] if 'Name' in df.columns else f"Patient {patient_id}"
     }
 
     # Optional: generate a gauge chart for overall risk

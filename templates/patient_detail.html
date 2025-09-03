@@ -10,11 +10,22 @@
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h2 class="text-white mb-2">
+                        <div class="d-flex justify-content-between align-items-center text-white fw-bold" style="font-size: 1.75rem;">
+                            <div>
                             <i class="fas fa-user-circle me-3"></i>
                             Patient ID: {{ patient_id }}
-                        </h2>
-                        <div class="row text-white">
+                            </div>
+                            <div>
+                                <i class="fas fa-birthday-cake me-2"></i>
+                                 Age: {{ patient_summary.age }}
+                            </div>
+                            <div>
+                                <i class="fas fa-venus-mars me-2"></i>
+                                 Gender: {{ patient_summary.gender }}
+                            </div>
+                        </div>
+                        
+                        <div class="row text-white mt-3 px-1">
                             <div class="col-md-4">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="fas fa-database me-2"></i>
