@@ -74,23 +74,27 @@
                     <div class="col-md-4 mb-3">
                         <div class="text-center p-3" style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid var(--border-color);">
                             <h6 class="gradient-text">{{ target.replace('_Y', ' Disease') }}</h6>
-                            <div class="stat-number" style="font-size: 2rem; color: 
-                                {% if pred.risk_level == 'High' %}var(--danger-color)
-                                {% elif pred.risk_level == 'Medium' %}var(--warning-color)  
-                                {% else %}var(--success-color){% endif %};">
-                                {{ (pred.probability * 100) | round(1) }}%
+                            <div class="stat-number" style="font-size: 2rem; color: {{ 'var(--danger-color)' if pred.risk_level == 'High' else 'var(--warning-color)' if pred.risk_level == 'Medium' else 'var(--success-color)' }};">
+                                {{ (pred.probability | default(0) | float * 100) | round(1) }}%
                             </div>
                             <span class="risk-indicator risk-{{ pred.risk_level.lower() }}">
                                 {{ pred.risk_level }} Risk
                             </span>
-                            <div class="progress mt-2" style="height: 6px;">
-                                <div class="progress-bar 
-                                    {% if pred.risk_level == 'High' %}bg-danger
-                                    {% elif pred.risk_level == 'Medium' %}bg-warning
-                                    {% else %}bg-success{% endif %}"
-                                    style="width: {{ (pred.probability * 100) }}%"></div>
-                            </div>
-                           
+                            <div class="progress">
+                               <div class="progress-bar 
+                                   {% if pred.risk_level == 'High' %}bg-danger progress-bar-striped progress-bar-animated
+                                   {% elif pred.risk_level == 'Medium' %}bg-warning progress-bar-striped
+                                   {% else %}bg-success{% endif %}"
+                                   role="progressbar"
+                                   style="width: {{ ((pred.probability | default(0) | float) * 100) | round(2) }}%"
+                                   aria-valuenow="{{ (pred.probability | default(0) | float) * 100 | round(2) }}"
+                                   aria-valuemin="0"
+                                   aria-valuemax="100">
+                                   {{ ((pred.probability | default(0) | float) * 100) | round(2) }}%
+                               </div>
+                             </div>
+
+
                         </div>
                     </div>
                     {% endfor %}
@@ -145,7 +149,14 @@
                             <div class="d-flex align-items-center">
                                 <div class="progress me-2" style="width: 60px; height: 4px;">
                                     <div class="progress-bar bg-info" 
-                                         style="width: {{ (feature_data.importance / features[0].importance * 100) if features else 0 }}%"></div>
+                                         style="width: {{
+    (
+        (feature_data.importance / (features[0].importance if features and features|length > 0 and features[0].importance not in [None, 0] else 1)) * 100
+    ) | round(2)
+    if features and features|length > 0 and features[0].importance not in [None, 0]
+    else 0
+}}%">>
+                                    </div>
                                 </div>
                                 <!-- <small class="text-muted">{{ feature_data.importance | round(3) }}</small> -->
                             </div>

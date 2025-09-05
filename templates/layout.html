@@ -118,10 +118,13 @@
             font-size: 2rem;
             font-weight: 700;
             background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            -webkit-background-clip: text;
+            background-clip: text;              /* Standard property */
+            -webkit-background-clip: text;      /* Safari/Chrome support */
             -webkit-text-fill-color: transparent;
+            color: transparent;                 /* Ensures fallback */
             margin: 0;
-        }
+       }
+
 
         .card {
             background: var(--card-bg);
@@ -169,10 +172,13 @@
             font-size: 2.5rem;
             font-weight: 700;
             background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
-            -webkit-background-clip: text;
+            background-clip: text;             /* Standard property */
+            -webkit-background-clip: text;     /* Safari/Chrome support */
             -webkit-text-fill-color: transparent;
+            color: transparent;                /* Fallback */
             margin-bottom: 0.5rem;
         }
+
 
         .stat-label {
             color: var(--text-muted);
@@ -311,10 +317,13 @@ select.form-select option {
         }
 
         .gradient-text {
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            -webkit-background-clip: text;
+                background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            background-clip: text;             /* Standard property */
+            -webkit-background-clip: text;     /* Safari/Chrome */
             -webkit-text-fill-color: transparent;
+            color: transparent;                /* Fallback */
         }
+
 
         @media (max-width: 768px) {
             .sidebar {

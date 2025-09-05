@@ -1,8 +1,6 @@
-{% extends "layout.html" %}
-{% block title %}Medical Dashboard - Home{% endblock %}
-{% block page_title %}Welcome to Chronic Medical Dashboard{% endblock %}
-
-{% block content %}
+{% extends "layout.html" %} {% block title %}Medical Dashboard - Home{% endblock
+%} {% block page_title %}Welcome to Chronic Medical Dashboard{% endblock %} {%
+block content %}
 <!-- Hero Section -->
 <!-- <div class="row mb-5">
     <div class="col-12">
@@ -27,220 +25,274 @@
 <!-- Statistics Cards -->
 {% if stats %}
 <div class="row mb-5">
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="stat-card fade-in">
-            <div class="stat-number">{{ stats.total }}</div>
-            <div class="stat-label">
-                <i class="fas fa-users me-1"></i>
-                Total Patients
-            </div>
-        </div>
+  <div class="col-lg-3 col-md-6 mb-4">
+    <div class="stat-card fade-in">
+      <div class="stat-number">{{ stats.total }}</div>
+      <div class="stat-label">
+        <i class="fas fa-users me-1"></i>
+        Total Patients
+      </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="stat-card fade-in" style="animation-delay: 0.1s;">
-            <div class="stat-number">{{ stats.models_loaded }}</div>
-            <div class="stat-label">
-                <i class="fas fa-brain me-1"></i>
-                AI Models Active
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-3 col-md-6 mb-4">
+    <div class="stat-card fade-in" style="animation-delay: 0.1s">
+      <div class="stat-number">{{ stats.models_loaded }}</div>
+      <div class="stat-label">
+        <i class="fas fa-brain me-1"></i>
+        AI Models Active
+      </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="stat-card fade-in" style="animation-delay: 0.2s;">
-            <div class="stat-number">{{ stats.high_risk }}</div>
-            <div class="stat-label">
-                <i class="fas fa-exclamation-triangle me-1"></i>
-                High Risk Patients
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-3 col-md-6 mb-4">
+    <div class="stat-card fade-in" style="animation-delay: 0.2s">
+      <div class="stat-number">{{ stats.high_risk }}</div>
+      <div class="stat-label">
+        <i class="fas fa-exclamation-triangle me-1"></i>
+        High Risk Patients
+      </div>
     </div>
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="stat-card fade-in" style="animation-delay: 0.3s;">
-            <div class="stat-number">{{ ((stats.total - stats.high_risk) / stats.total * 100) | round(0) if stats.total > 0 else 0 }}%</div>
-            <div class="stat-label">
-                <i class="fas fa-shield-alt me-1"></i>
-                Safety Score
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-3 col-md-6 mb-4">
+    <div class="stat-card fade-in" style="animation-delay: 0.3s">
+      <div class="stat-number">
+        {{ ((stats.total - stats.high_risk) / stats.total * 100) | round(0) if
+        stats.total > 0 else 0 }}%
+      </div>
+      <div class="stat-label">
+        <i class="fas fa-shield-alt me-1"></i>
+        Safety Score
+      </div>
     </div>
+  </div>
 </div>
 {% endif %}
 
 <!-- Quick Actions -->
 <div class="row">
-    <div class="col-lg-6 mb-4">
-        <div class="card h-100 fade-in" style="animation-delay: 0.4s;">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-search me-2"></i>
-                    Quick Patient Search
-                </h5>
-            </div>
-            <div class="card-body">
-                <p class="text-white mb-4">Search and access patient records instantly with our advanced search system.</p>
-                
-                {% if patient_ids %}
-                <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">Select Patient</label>
-                        <select class="form-select" name="patient_id" required>
-                            <option value="">-- Choose Patient ID --</option>
-                            {% for pid in patient_ids %}
-                                <option value="{{ pid }}" class="text-black">Patient {{ pid }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-user-md me-2"></i>
-                        View Patient Details
-                    </button>
-                </form>
-                {% else %}
-                <div class="text-center py-4">
-                    <i class="fas fa-users-slash fa-3x text-white mb-3"></i>
-                    <p class="text-white">No patients loaded. Upload a CSV file to get started.</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100 fade-in" style="animation-delay: 0.4s">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="fas fa-search me-2"></i>
+          Quick Patient Search
+        </h5>
+      </div>
+      <div class="card-body">
+        <p class="text-white mb-4">
+          Search and access patient records instantly with our advanced search
+          system.
+        </p>
 
-    <div class="col-lg-6 mb-4">
-        <div class="card h-100 fade-in" style="animation-delay: 0.5s;">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-upload me-2"></i>
-                    Upload Patient Data
-                </h5>
-            </div>
-            <div class="card-body">
-                <p class="text-white mb-4">Import new patient data to expand your analytics capabilities and insights.</p>
-                
-                <form action="{{ url_for('upload_csv') }}" method="POST" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label">CSV File</label>
-                        <input type="file" name="csv_file" accept=".csv" class="form-control" required>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Supported format: CSV with Patient_ID column
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="fas fa-cloud-upload-alt me-2"></i>
-                        Upload & Analyze
-                    </button>
-                </form>
-                
-                <div class="mt-3 p-3" style="background: rgba(0, 212, 170, 0.1); border-radius: 12px; border-left: 3px solid var(--success-color);">
-                    <small class="text-success">
-                        <i class="fas fa-lightbulb me-1"></i>
-                        <strong>Tip:</strong> Ensure your CSV includes medical parameters like blood pressure, heart rate, glucose levels for optimal AI predictions.
-                    </small>
-                </div>
-            </div>
+        {% if patient_ids %}
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Select Patient</label>
+            <select class="form-select" name="patient_id" required>
+              <option value="">-- Choose Patient ID --</option>
+              {% for pid in patient_ids %}
+              <option value="{{ pid }}" class="text-black">
+                Patient {{ pid }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-user-md me-2"></i>
+            View Patient Details
+          </button>
+        </form>
+        {% else %}
+        <div class="text-center py-4">
+          <i class="fas fa-users-slash fa-3x text-white mb-3"></i>
+          <p class="text-white">
+            No patients loaded. Upload a CSV file to get started.
+          </p>
         </div>
+        {% endif %}
+      </div>
     </div>
+  </div>
+
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100 fade-in" style="animation-delay: 0.5s">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="fas fa-upload me-2"></i>
+          Upload Patient Data
+        </h5>
+      </div>
+      <div class="card-body">
+        <p class="text-white mb-4">
+          Import new patient data to expand your analytics capabilities and
+          insights.
+        </p>
+
+        <form
+          action="{{ url_for('upload_csv') }}"
+          method="POST"
+          enctype="multipart/form-data"
+        >
+          <div class="mb-3">
+            <label class="form-label">CSV File</label>
+            <input
+              type="file"
+              name="csv_file"
+              accept=".csv"
+              class="form-control"
+              required
+            />
+            <div class="form-text">
+              <i class="fas fa-info-circle me-1"></i>
+              Supported format: CSV with Patient_ID column
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success w-100">
+            <i class="fas fa-cloud-upload-alt me-2"></i>
+            Upload & Analyze
+          </button>
+        </form>
+
+        <div
+          class="mt-3 p-3"
+          style="
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 12px;
+            border-left: 3px solid var(--success-color);
+          "
+        >
+          <small class="text-success">
+            <i class="fas fa-lightbulb me-1"></i>
+            <strong>Tip:</strong> Ensure your CSV includes medical parameters
+            like blood pressure, heart rate, glucose levels for optimal AI
+            predictions.
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Feature Highlights -->
 <div class="row mt-5">
-    <div class="col-12">
-        <h3 class="gradient-text mb-4 text-center">
-            <i class="fas fa-star me-2"></i>
-            Platform Features
-        </h3>
-    </div>
-    
-    <div class="col-lg-4 mb-4">
-        <div class="card h-100 text-center fade-in" style="animation-delay: 0.6s;">
-            <div class="card-body">
-                <div class="mb-3" style="color: var(--accent-blue); font-size: 3rem;">
-                    <i class="fas fa-robot"></i>
-                </div>
-                <h5 class="gradient-text">AI-Powered Predictions</h5>
-                <p class="text-white">Advanced machine learning models predict Heart Disease, Diabetes, and Kidney Disease with high accuracy.</p>
-            </div>
+  <div class="col-12">
+    <h3 class="gradient-text mb-4 text-center">
+      <i class="fas fa-star me-2"></i>
+      Platform Features
+    </h3>
+  </div>
+
+  <div class="col-lg-4 mb-4">
+    <div class="card h-100 text-center fade-in" style="animation-delay: 0.6s">
+      <div class="card-body">
+        <div class="mb-3" style="color: var(--accent-blue); font-size: 3rem">
+          <i class="fas fa-robot"></i>
         </div>
+        <h5 class="gradient-text">AI-Powered Predictions</h5>
+        <p class="text-white">
+          Advanced machine learning models predict Heart Disease, Diabetes, and
+          Kidney Disease with high accuracy.
+        </p>
+      </div>
     </div>
-    
-    <div class="col-lg-4 mb-4">
-        <div class="card h-100 text-center fade-in" style="animation-delay: 0.7s;">
-            <div class="card-body">
-                <div class="mb-3" style="color: var(--accent-green); font-size: 3rem;">
-                    <i class="fas fa-chart-area"></i>
-                </div>
-                <h5 class="gradient-text">Real-Time Analytics</h5>
-                <p class="text-white">Interactive visualizations and trend analysis help identify critical patterns in patient data.</p>
-            </div>
+  </div>
+
+  <div class="col-lg-4 mb-4">
+    <div class="card h-100 text-center fade-in" style="animation-delay: 0.7s">
+      <div class="card-body">
+        <div class="mb-3" style="color: var(--accent-green); font-size: 3rem">
+          <i class="fas fa-chart-area"></i>
         </div>
+        <h5 class="gradient-text">Real-Time Analytics</h5>
+        <p class="text-white">
+          Interactive visualizations and trend analysis help identify critical
+          patterns in patient data.
+        </p>
+      </div>
     </div>
-    
-    <div class="col-lg-4 mb-4">
-        <div class="card h-100 text-center fade-in" style="animation-delay: 0.8s;">
-            <div class="card-body">
-                <div class="mb-3" style="color: var(--accent-purple); font-size: 3rem;">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <h5 class="gradient-text">Risk Assessment</h5>
-                <p class="text-white">Comprehensive risk scoring with SHAP explanations for transparent decision-making.</p>
-            </div>
+  </div>
+
+  <div class="col-lg-4 mb-4">
+    <div class="card h-100 text-center fade-in" style="animation-delay: 0.8s">
+      <div class="card-body">
+        <div class="mb-3" style="color: var(--accent-purple); font-size: 3rem">
+          <i class="fas fa-shield-alt"></i>
         </div>
+        <h5 class="gradient-text">Risk Assessment</h5>
+        <p class="text-white">
+          Comprehensive risk scoring with SHAP explanations for transparent
+          decision-making.
+        </p>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Quick Stats Mini Dashboard -->
 {% if stats and stats.total > 0 %}
 <div class="row mt-5">
-    <div class="col-12">
-        <h3 class="gradient-text mb-4 text-center">
-            <i class="fas fa-tachometer-alt me-2"></i>
-            Quick Overview
-        </h3>
-    </div>
-    <div class="col-12">
-        <div class="card fade-in" style="animation-delay: 0.9s;">
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-md-3">
-                        <div class="p-3">
-                            <div class="h2 text-success mb-2">{{ stats.low_risk }}</div>
-                            <div class="text-white">Low Risk</div>
-                            <div class="progress mt-2" style="height: 4px;">
-                                <div class="progress-bar bg-success" style="width: {{ (stats.low_risk / stats.total * 100) if stats.total > 0 else 0 }}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3">
-                            <div class="h2 text-warning mb-2">{{ stats.medium_risk }}</div>
-                            <div class="text-white">Medium Risk</div>
-                            <div class="progress mt-2" style="height: 4px;">
-                                <div class="progress-bar bg-warning" style="width: {{ (stats.medium_risk / stats.total * 100) if stats.total > 0 else 0 }}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3">
-                            <div class="h2 text-danger mb-2">{{ stats.high_risk }}</div>
-                            <div class="text-white">High Risk</div>
-                            <div class="progress mt-2" style="height: 4px;">
-                                <div class="progress-bar bg-danger" style="width: {{ (stats.high_risk / stats.total * 100) if stats.total > 0 else 0 }}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3">
-                            <div class="h2 gradient-text mb-2">{{ stats.models_loaded }}/3</div>
-                            <div class="text-white">Models Active</div>
-                            <div class="progress mt-2" style="height: 4px;">
-                                <div class="progress-bar" style="background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); width: {{ (stats.models_loaded / 3 * 100) }}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  <div class="col-12">
+    <h3 class="gradient-text mb-4 text-center">
+      <i class="fas fa-tachometer-alt me-2"></i>
+      Quick Overview
+    </h3>
+  </div>
+  <div class="col-12">
+    <div class="card fade-in" style="animation-delay: 0.9s">
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-md-3">
+            <div class="p-3">
+              <div class="h2 text-success mb-2">{{ stats.low_risk }}</div>
+              <div class="text-white">Low Risk</div>
+              <div class="progress mt-2" style="height: 4px">
+                <div
+                  class="progress-bar bg-success"
+                  style="width: {{ (stats.low_risk / stats.total * 100) if stats.total > 0 else 0 }}%"
+                ></div>
+              </div>
             </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-3">
+              <div class="h2 text-warning mb-2">{{ stats.medium_risk }}</div>
+              <div class="text-white">Medium Risk</div>
+              <div class="progress mt-2" style="height: 4px">
+                <div
+                  class="progress-bar bg-warning"
+                  style="width: {{ (stats.medium_risk / stats.total * 100) if stats.total > 0 else 0 }}%"
+                ></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-3">
+              <div class="h2 text-danger mb-2">{{ stats.high_risk }}</div>
+              <div class="text-white">High Risk</div>
+              <div class="progress mt-2" style="height: 4px">
+                <div
+                  class="progress-bar bg-danger"
+                  style="width: {{ (stats.high_risk / stats.total * 100) if stats.total > 0 else 0 }}%"
+                ></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-3">
+              <div class="h2 gradient-text mb-2">
+                {{ stats.models_loaded }}/3
+              </div>
+              <div class="text-white">Models Active</div>
+              <div class="progress mt-2" style="height: 4px">
+                <div
+                  class="progress-bar"
+                  style="background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); width: {{ (stats.models_loaded / 3 * 100) }}%"
+                ></div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </div>
-{% endif %}
-{% endblock %}
+{% endif %} {% endblock %}
