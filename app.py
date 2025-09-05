@@ -18,7 +18,7 @@ app.secret_key = "supersecretkey"
 # Base directory (works both locally and on Render)
 # -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FOLDER = os.path.join(BASE_DIR, "patients")
+DATA_FOLDER = os.path.join(BASE_DIR, "Patients")
 MODEL_FOLDER = os.path.join(BASE_DIR, "models")
 TARGETS = ["Heart_Y", "Diabetes_Y", "Kidney_Y"]
 
