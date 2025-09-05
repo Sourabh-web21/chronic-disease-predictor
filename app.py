@@ -14,39 +14,42 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
-DATA_FOLDER = "patients"
-MODEL_FOLDER = "models"
+# -----------------------------
+# Base directory (works both locally and on Render)
+# -----------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_FOLDER = os.path.join(BASE_DIR, "patients")
+MODEL_FOLDER = os.path.join(BASE_DIR, "models")
 TARGETS = ["Heart_Y", "Diabetes_Y", "Kidney_Y"]
 
+# -----------------------------
 # Load models
+# -----------------------------
 models = {}
 for target in TARGETS:
     path = os.path.join(MODEL_FOLDER, f"{target}.joblib")
     if os.path.exists(path):
         models[target] = joblib.load(path)
 
+# -----------------------------
 # Load patients
+# -----------------------------
 patients = {}
 if os.path.exists(DATA_FOLDER):
     for fname in os.listdir(DATA_FOLDER):
         if fname.endswith(".csv"):
-            df = pd.read_csv(os.path.join(DATA_FOLDER, fname))
+            path = os.path.join(DATA_FOLDER, fname)
+            df = pd.read_csv(path)
             df['Patient_ID'] = df['Patient_ID'].astype(str)
             if 'Day' not in df.columns:
                 df['Day'] = range(len(df))
-            patients[df['Patient_ID'].iloc[0]] = df
+            pid = df['Patient_ID'].iloc[0]
+            patients[pid] = df
 
 # -----------------------------
 # Helper functions
 # -----------------------------
 def generate_risk_gauge(risk_score):
-    """
-    Creates a simple gauge chart for overall risk (0 to 1)
-    Returns base64 PNG string
-    """
-    import matplotlib.pyplot as plt
-    import io, base64
-
     fig, ax = plt.subplots(figsize=(3, 1.5))
     ax.barh([0], [risk_score], color='red' if risk_score > 0.66 else 'orange' if risk_score > 0.33 else 'green')
     ax.barh([0], [1], left=[risk_score], color='lightgray', alpha=0.3)
@@ -97,7 +100,6 @@ def generate_plot(df, col):
 # -----------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
-    # Handle search form submission
     if request.method == "POST":
         patient_id = request.form.get("patient_id")
         if patient_id in patients:
@@ -105,7 +107,6 @@ def index():
         else:
             flash("Patient ID not found!", "danger")
 
-    # Compute stats for index page
     patient_list = []
     for pid, df in patients.items():
         X_pred = feature_engineering(df)
@@ -151,7 +152,6 @@ def index():
         stats=stats
     )
 
-
 @app.route("/upload", methods=["POST"])
 def upload_csv():
     file = request.files.get("csv_file")
@@ -178,7 +178,6 @@ def patient_detail(patient_id):
 
     predictions = {}
     shap_info_out = {}
-
     overall_risks = []
 
     for target, model in models.items():
@@ -199,7 +198,6 @@ def patient_detail(patient_id):
             prob = model.predict_proba(X_ordered)[0,1]
             overall_risks.append(prob)
 
-            # Assign risk level
             if prob > 0.66:
                 risk_level = "High"
             elif prob > 0.33:
@@ -213,7 +211,6 @@ def patient_detail(patient_id):
                 "confidence": round(prob * 100, 1)
             }
 
-            # SHAP values
             explainer = shap.TreeExplainer(model)
             shap_vals = explainer.shap_values(X_ordered)
             shap_series = pd.Series(shap_vals[0], index=X_ordered.columns).abs().sort_values(ascending=False)
@@ -230,22 +227,19 @@ def patient_detail(patient_id):
 
     overall_risk = np.mean(overall_risks) if overall_risks else 0
 
-    # Trend plots
     cols_to_plot = [c for c in df.columns if c not in ['Patient_ID','Day'] + TARGETS]
     plots = {col: generate_plot(df, col) for col in cols_to_plot}
 
-    # Patient summary for header
     patient_summary = {
         "total_records": len(df),
-        "data_quality": 100,  # Placeholder, compute real if needed
+        "data_quality": 100,
         "last_update": df['Day'].iloc[-1] if 'Day' in df.columns else "N/A",
-         "age": int(df['Age'].iloc[-1]) if 'Age' in df.columns else "N/A",
-    "gender": df['Gender'].iloc[-1] if 'Gender' in df.columns else "N/A",
-    "name": df['Name'].iloc[-1] if 'Name' in df.columns else f"Patient {patient_id}"
+        "age": int(df['Age'].iloc[-1]) if 'Age' in df.columns else "N/A",
+        "gender": df['Gender'].iloc[-1] if 'Gender' in df.columns else "N/A",
+        "name": df['Name'].iloc[-1] if 'Name' in df.columns else f"Patient {patient_id}"
     }
 
-    # Optional: generate a gauge chart for overall risk
-    risk_gauge = generate_risk_gauge(overall_risk)  # You can define this function similar to generate_plot
+    risk_gauge = generate_risk_gauge(overall_risk)
 
     return render_template(
         "patient_detail.html",
@@ -286,7 +280,6 @@ def dashboard():
         else:
             risk_level = "Low"
 
-        # Fill in default values for template
         patient_list.append({
             "id": pid,
             "risk_score": risk_score,
@@ -298,7 +291,6 @@ def dashboard():
             "alert": risk_score > 0.66
         })
 
-    # Calculate stats for dashboard
     stats = {
         "total": len(patient_list),
         "high_risk": sum(1 for p in patient_list if p["risk_level"]=="High"),
@@ -307,14 +299,12 @@ def dashboard():
         "models_loaded": len(models)
     }
 
-    # Risk distribution chart data
     risk_distribution = {
         "Low": stats["low_risk"],
         "Medium": stats["medium_risk"],
         "High": stats["high_risk"]
     }
 
-    # Handle form submission for "View Patient Details"
     if request.method == "POST":
         patient_id = request.form.get("patient_id")
         if patient_id in patients:
@@ -328,8 +318,6 @@ def dashboard():
         stats=stats,
         risk_distribution=risk_distribution
     )
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)
