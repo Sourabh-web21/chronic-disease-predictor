@@ -319,7 +319,174 @@ def upload_csv():
         flash(f"Upload error: {str(e)}", "danger")
         return redirect(url_for("index"))
 
-# Include your other routes with similar error handling...
+@app.route("/patient/<patient_id>")
+def patient_detail(patient_id):
+    try:
+        if patient_id not in patients:
+            flash("Patient not found!", "danger")
+            return redirect(url_for("index"))
+
+        df = patients[patient_id]
+        X_pred = feature_engineering(df)
+
+        predictions = {}
+        shap_info_out = {}
+        overall_risks = []
+
+        for target, model in models.items():
+            try:
+                expected_cols = model.get_booster().feature_names
+                for c in expected_cols:
+                    if c not in X_pred.columns:
+                        if "_mean" in c:
+                            base = c.replace("_mean","_last")
+                            X_pred[c] = X_pred[base] if base in X_pred.columns else 0
+                        elif "_std" in c:
+                            base = c.replace("_std","_last")
+                            X_pred[c] = 0.1*X_pred[base] if base in X_pred.columns else 0
+                        else:
+                            X_pred[c] = 0
+
+                X_ordered = X_pred[expected_cols]
+                prob = model.predict_proba(X_ordered)[0,1]
+                overall_risks.append(prob)
+
+                if prob > 0.66:
+                    risk_level = "High"
+                elif prob > 0.33:
+                    risk_level = "Medium"
+                else:
+                    risk_level = "Low"
+
+                predictions[target] = {
+                    "probability": prob,
+                    "risk_level": risk_level,
+                    "confidence": round(prob * 100, 1)
+                }
+
+                explainer = shap.TreeExplainer(model)
+                shap_vals = explainer.shap_values(X_ordered)
+                shap_series = pd.Series(shap_vals[0], index=X_ordered.columns).abs().sort_values(ascending=False)
+                top_features = [{"feature": f, "importance": shap_series[f]} for f in shap_series.head(3).index]
+                shap_info_out[target] = top_features
+
+            except Exception as e:
+                print(f"Error processing model {target} for patient {patient_id}: {e}")
+                predictions[target] = {
+                    "probability": 0,
+                    "risk_level": "Low",
+                    "confidence": 0
+                }
+                shap_info_out[target] = []
+
+        overall_risk = np.mean(overall_risks) if overall_risks else 0
+
+        cols_to_plot = [c for c in df.columns if c not in ['Patient_ID','Day'] + TARGETS]
+        plots = {col: generate_plot(df, col) for col in cols_to_plot}
+
+        patient_summary = {
+            "total_records": len(df),
+            "data_quality": 100,
+            "last_update": df['Day'].iloc[-1] if 'Day' in df.columns else "N/A",
+            "age": int(df['Age'].iloc[-1]) if 'Age' in df.columns else "N/A",
+            "gender": df['Gender'].iloc[-1] if 'Gender' in df.columns else "N/A",
+            "name": df['Name'].iloc[-1] if 'Name' in df.columns else f"Patient {patient_id}"
+        }
+
+        risk_gauge = generate_risk_gauge(overall_risk)
+
+        return render_template(
+            "patient_detail.html",
+            patient_id=patient_id,
+            df=df.tail(10).to_dict(orient='records'),
+            predictions=predictions,
+            shap_info=shap_info_out,
+            plots=plots,
+            overall_risk=overall_risk,
+            patient_summary=patient_summary,
+            risk_gauge=risk_gauge
+        )
+    except Exception as e:
+        print(f"Error in patient_detail: {e}")
+        return f"Error loading patient details: {str(e)}", 500
+
+@app.route("/dashboard", methods=["GET", "POST"])
+def dashboard():
+    try:
+        patient_list = []
+        for pid, df in patients.items():
+            try:
+                X_pred = feature_engineering(df)
+                if X_pred.empty:
+                    continue
+                    
+                risk_vals = []
+
+                for target, model in models.items():
+                    try:
+                        expected_cols = model.get_booster().feature_names
+                        for c in expected_cols:
+                            if c not in X_pred.columns:
+                                X_pred[c] = 0
+                        X_pred_ordered = X_pred[expected_cols]
+                        prob = model.predict_proba(X_pred_ordered)[0,1]
+                        risk_vals.append(prob)
+                    except Exception as e:
+                        print(f"Error predicting for patient {pid}, model {target}: {e}")
+                        continue
+
+                risk_score = np.mean(risk_vals) if risk_vals else 0
+                if risk_score > 0.66:
+                    risk_level = "High"
+                elif risk_score > 0.33:
+                    risk_level = "Medium"
+                else:
+                    risk_level = "Low"
+
+                patient_list.append({
+                    "id": pid,
+                    "risk_score": risk_score,
+                    "risk_level": risk_level,
+                    "age": int(df['Age'].iloc[-1]) if 'Age' in df.columns else 0,
+                    "last_visit": df['Day'].iloc[-1] if 'Day' in df.columns else "N/A",
+                    "conditions": {t: models[t].predict_proba(feature_engineering(df)[models[t].get_booster().feature_names])[0,1]
+                                   if t in models else 0 for t in TARGETS},
+                    "alert": risk_score > 0.66
+                })
+            except Exception as e:
+                print(f"Error processing patient {pid} for dashboard: {e}")
+                continue
+
+        stats = {
+            "total": len(patient_list),
+            "high_risk": sum(1 for p in patient_list if p["risk_level"]=="High"),
+            "medium_risk": sum(1 for p in patient_list if p["risk_level"]=="Medium"),
+            "low_risk": sum(1 for p in patient_list if p["risk_level"]=="Low"),
+            "models_loaded": len(models)
+        }
+
+        risk_distribution = {
+            "Low": stats["low_risk"],
+            "Medium": stats["medium_risk"],
+            "High": stats["high_risk"]
+        }
+
+        if request.method == "POST":
+            patient_id = request.form.get("patient_id")
+            if patient_id in patients:
+                return redirect(url_for("patient_detail", patient_id=patient_id))
+            else:
+                flash("Patient not found!", "danger")
+
+        return render_template(
+            "dashboard.html",
+            patients=patient_list,
+            stats=stats,
+            risk_distribution=risk_distribution
+        )
+    except Exception as e:
+        print(f"Error in dashboard: {e}")
+        return f"Error loading dashboard: {str(e)}", 500
 
 print("=== APP INITIALIZATION COMPLETE ===")
 
