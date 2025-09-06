@@ -18,7 +18,7 @@ app.secret_key = "supersecretkey"
 # Base directory (works both locally and on Render)
 # -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FOLDER = os.path.join(BASE_DIR, "Patients")
+DB_PATH = os.path.join(BASE_DIR, "patients.db")
 MODEL_FOLDER = os.path.join(BASE_DIR, "models")
 TARGETS = ["Heart_Y", "Diabetes_Y", "Kidney_Y"]
 
@@ -34,17 +34,26 @@ for target in TARGETS:
 # -----------------------------
 # Load patients
 # -----------------------------
+# -----------------------------
+# Load patients from SQLite
+# -----------------------------
 patients = {}
-if os.path.exists(DATA_FOLDER):
-    for fname in os.listdir(DATA_FOLDER):
-        if fname.endswith(".csv"):
-            path = os.path.join(DATA_FOLDER, fname)
-            df = pd.read_csv(path)
-            df['Patient_ID'] = df['Patient_ID'].astype(str)
-            if 'Day' not in df.columns:
-                df['Day'] = range(len(df))
-            pid = df['Patient_ID'].iloc[0]
-            patients[pid] = df
+if os.path.exists(DB_PATH):
+    import sqlite3
+    conn = sqlite3.connect(DB_PATH)
+
+    # get all unique Patient_IDs
+    pids = pd.read_sql("SELECT DISTINCT Patient_ID FROM patient_data", conn)["Patient_ID"].astype(str).tolist()
+
+    for pid in pids:
+        df = pd.read_sql(f"SELECT * FROM patient_data WHERE Patient_ID = ?", conn, params=(pid,))
+        df['Patient_ID'] = df['Patient_ID'].astype(str)
+        if 'Day' not in df.columns:
+            df['Day'] = range(len(df))
+        patients[pid] = df
+
+    conn.close()
+
 
 # -----------------------------
 # Helper functions
@@ -158,14 +167,25 @@ def upload_csv():
     if not file:
         flash("No file selected", "danger")
         return redirect(url_for("index"))
+
     df = pd.read_csv(file)
     df['Patient_ID'] = df['Patient_ID'].astype(str)
     if 'Day' not in df.columns:
         df['Day'] = range(len(df))
     patient_id = df['Patient_ID'].iloc[0]
+
+    # save into SQLite
+    import sqlite3
+    conn = sqlite3.connect(DB_PATH)
+    df.to_sql("patient_data", conn, if_exists="append", index=False)
+    conn.close()
+
+    # also update in-memory cache
     patients[patient_id] = df
+
     flash(f"Patient {patient_id} uploaded successfully", "success")
     return redirect(url_for("patient_detail", patient_id=patient_id))
+
 
 @app.route("/patient/<patient_id>")
 def patient_detail(patient_id):
