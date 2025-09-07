@@ -2,23 +2,23 @@ import os
 import sys
 import traceback
 
-print("=== STARTING APP INITIALIZATION ===")
+
 
 try:
     import joblib
-    print("✓ joblib imported successfully")
+   
 except Exception as e:
     print(f"✗ joblib import failed: {e}")
 
 try:
     import pandas as pd
-    print("✓ pandas imported successfully")
+    
 except Exception as e:
     print(f"✗ pandas import failed: {e}")
 
 try:
     import numpy as np
-    print("✓ numpy imported successfully")
+    # print("✓ numpy imported successfully")
 except Exception as e:
     print(f"✗ numpy import failed: {e}")
 
@@ -26,13 +26,13 @@ try:
     import matplotlib
     matplotlib.use('Agg')  # Use non-interactive backend for server
     import matplotlib.pyplot as plt
-    print("✓ matplotlib imported successfully")
+    # print("✓ matplotlib imported successfully")
 except Exception as e:
     print(f"✗ matplotlib import failed: {e}")
 
 try:
     import shap
-    print("✓ shap imported successfully")
+    # print("✓ shap imported successfully")
 except Exception as e:
     print(f"✗ shap import failed: {e}")
 
@@ -491,5 +491,5 @@ def dashboard():
 print("=== APP INITIALIZATION COMPLETE ===")
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    # port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", debug=False)
