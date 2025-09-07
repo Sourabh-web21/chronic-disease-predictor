@@ -92,7 +92,8 @@ try:
     if os.path.exists(DB_PATH):
         print("Database file exists, attempting to connect...")
         import sqlite3
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+
         
         # Check if table exists
         tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table';", conn)
@@ -491,5 +492,5 @@ def dashboard():
 print("=== APP INITIALIZATION COMPLETE ===")
 
 if __name__ == "__main__":
-    # port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", debug=False)
